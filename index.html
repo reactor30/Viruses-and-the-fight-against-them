@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Контрольная работа: вирусы и борьба с ними</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;700&family=Spectral:wght@500;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#e8eeea; --paper:#fbfcfa; --ink:#15221d; --muted:#5b6b64; --line:#c9d5ce;
+  --ok:#1e8a5a; --warn:#d98e04; --bad:#c8244f; --sel:#e1ebe6;
+  --sans:"Onest",system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;
+  --serif:"Spectral",Georgia,"Times New Roman",serif;
+}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--bg);color:var(--ink);font-family:var(--sans);line-height:1.5;min-height:100vh;padding:24px 16px 48px}
+.wrap{max-width:720px;margin:0 auto}
+h1{font-family:var(--serif);font-size:clamp(28px,5vw,40px);line-height:1.15;margin:0 0 8px}
+.lead{color:var(--muted);margin:0 0 24px;max-width:56ch}
+.card{background:var(--paper);border:1.5px solid var(--ink);border-radius:6px;padding:24px;box-shadow:6px 6px 0 var(--ink)}
+.hud{display:flex;justify-content:space-between;font-size:14px;color:var(--muted);margin-bottom:8px}
+.bar{height:10px;border:1.5px solid var(--ink);border-radius:3px;background:var(--bg);overflow:hidden;margin-bottom:22px}
+.bar i{display:block;height:100%;width:0;background:var(--ink);transition:width .35s ease}
+.q{font-family:var(--serif);font-size:clamp(20px,3.6vw,24px);line-height:1.3;margin:0 0 18px}
+.opts{display:grid;gap:10px;padding:0;margin:0;list-style:none}
+.opt{width:100%;text-align:left;font:inherit;color:inherit;background:var(--paper);border:1.5px solid var(--line);border-radius:6px;padding:12px 14px;cursor:pointer;display:flex;gap:12px;align-items:flex-start;transition:border-color .15s,background .15s}
+.opt:hover{border-color:var(--ink)}
+.opt:focus-visible,.btn:focus-visible{outline:3px solid #3a7bd5;outline-offset:2px}
+.opt .k{flex:none;width:26px;height:26px;border:1.5px solid currentColor;border-radius:50%;display:grid;place-items:center;font-size:13px;font-weight:700}
+.opt[aria-pressed="true"]{border-color:var(--ink);background:var(--sel)}
+.opt[aria-pressed="true"] .k{background:var(--ink);color:#fff}
+.row{display:flex;justify-content:space-between;margin-top:22px;gap:10px}
+.btn{font:inherit;font-weight:700;background:var(--ink);color:#fff;border:1.5px solid var(--ink);border-radius:6px;padding:11px 20px;cursor:pointer}
+.btn:hover:not(:disabled){background:#2b3f37}
+.btn:disabled{opacity:.35;cursor:not-allowed}
+.btn.ghost{background:transparent;color:var(--ink)}
+.btn.ghost:hover:not(:disabled){background:var(--bg)}
+.result{text-align:center;padding:12px 0 4px}
+.result .cap{color:var(--muted);margin:0}
+.grade{font-family:var(--serif);font-size:clamp(120px,28vw,180px);line-height:1;font-weight:700;margin:6px 0}
+.result h2{font-family:var(--serif);font-size:26px;margin:0 0 20px}
+.hide{display:none}
+@media (max-width:480px){.card{padding:18px;box-shadow:4px 4px 0 var(--ink)}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Вирусы и борьба с ними</h1>
+  <p class="lead">Контрольная работа по информатике. 10 вопросов, у каждого один верный ответ. Оценка появится только в конце.</p>
+
+  <main class="card">
+    <section id="quiz">
+      <div class="hud"><span>Вопрос <b id="num">1</b> из <b id="total">10</b></span><span id="done"></span></div>
+      <div class="bar" role="progressbar" aria-label="Прогресс" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><i id="fill"></i></div>
+      <h2 class="q" id="qtext"></h2>
+      <ul class="opts" id="opts"></ul>
+      <div class="row">
+        <button class="btn ghost" id="prev" type="button">Назад</button>
+        <button class="btn" id="next" type="button" disabled>Далее</button>
+      </div>
+    </section>
+
+    <section id="result" class="result hide" aria-live="polite">
+      <p class="cap">Ваша оценка</p>
+      <p class="grade" id="grade">5</p>
+      <h2 id="label"></h2>
+      <button class="btn" id="again" type="button">Пройти заново</button>
+    </section>
+  </main>
+</div>
+
+<script>
+// В каждом вопросе ПЕРВЫЙ вариант в массиве a — верный. При показе варианты перемешиваются.
+const QUESTIONS = [
+  {q:"Что такое компьютерный вирус?",
+   a:["Вредоносная программа, которая копирует себя и внедряется в другие файлы или программы","Любая программа, которая работает медленно","Неисправность жёсткого диска","Программа для защиты от взлома"]},
+  {q:"Какая вредоносная программа распространяется по сети самостоятельно, без участия пользователя?",
+   a:["Сетевой червь","Троянская программа","Шпионская программа (spyware)","Рекламный баннер"]},
+  {q:"Чем троянская программа отличается от вируса?",
+   a:["Маскируется под полезную программу и сама не размножается","Всегда шифрует файлы","Заражает только телефоны","Работает только при выключенном интернете"]},
+  {q:"Что делает программа-шифровальщик (ransomware)?",
+   a:["Шифрует файлы и требует выкуп за доступ к ним","Ускоряет работу диска","Удаляет только временные файлы","Блокирует рекламу в браузере"]},
+  {q:"Что такое фишинг?",
+   a:["Мошенничество с поддельными письмами и сайтами, чтобы выманить пароли и данные","Заражение через флешку","Перегрузка сервера запросами","Способ сжатия файлов"]},
+  {q:"Как работает сигнатурный метод обнаружения вирусов?",
+   a:["Сравнивает файлы с базой известных характерных фрагментов кода вирусов","Следит за температурой процессора","Проверяет, подписан ли файл автором","Отключает интернет при запуске файла"]},
+  {q:"Что умеет эвристический анализ антивируса?",
+   a:["Выявлять ранее неизвестные угрозы по подозрительному поведению и структуре кода","Находить только вирусы из базы","Чинить повреждённые диски","Ускорять загрузку системы"]},
+  {q:"Для чего нужен карантин в антивирусе?",
+   a:["Изолировать подозрительный файл, не удаляя его безвозвратно","Ускорить сканирование","Скрыть файл от пользователя навсегда","Обновить вирусные базы"]},
+  {q:"Что лучше всего сделать при подозрении на заражение компьютера?",
+   a:["Отключить от сети, запустить полную проверку антивирусом, сменить пароли с чистого устройства","Продолжить работу и подождать","Сразу заплатить тому, кто пишет в сообщении","Отправить подозрительный файл друзьям, чтобы проверили"]},
+  {q:"Что означает правило резервного копирования «3-2-1»?",
+   a:["3 копии данных, на 2 разных носителях, 1 копия хранится отдельно","3 пароля, 2 антивируса, 1 файрвол","3 раза в день, 2 минуты, 1 файл","3 диска в одном компьютере"]}
+];
+
+// Шкала оценок по числу верных ответов из 10
+const gradeOf = n => n >= 9 ? 5 : n >= 7 ? 4 : n >= 5 ? 3 : n >= 3 ? 2 : 1;
+const LABELS = {5:"Отлично", 4:"Хорошо", 3:"Удовлетворительно", 2:"Неудовлетворительно", 1:"Плохо"};
+const COLORS = {5:"var(--ok)", 4:"var(--ok)", 3:"var(--warn)", 2:"var(--bad)", 1:"var(--bad)"};
+const LET = ["А","Б","В","Г"];
+
+const $ = id => document.getElementById(id);
+const shuffle = a => { a = a.slice(); for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
+
+let order, shown, picked, idx;
+
+function start(){
+  order = shuffle(QUESTIONS.map((_, i) => i));
+  shown = order.map(i => shuffle(QUESTIONS[i].a.map((t, k) => ({t, ok: k === 0}))));
+  picked = order.map(() => -1);
+  idx = 0;
+  $("total").textContent = QUESTIONS.length;
+  $("result").classList.add("hide");
+  $("quiz").classList.remove("hide");
+  render();
+}
+
+function render(){
+  const last = idx === QUESTIONS.length - 1;
+  $("num").textContent = idx + 1;
+  $("qtext").textContent = QUESTIONS[order[idx]].q;
+  const answered = picked.filter(p => p >= 0).length;
+  $("done").textContent = "Отвечено: " + answered + " из " + QUESTIONS.length;
+  const pct = Math.round(100 * answered / QUESTIONS.length);
+  $("fill").style.width = pct + "%";
+  document.querySelector(".bar").setAttribute("aria-valuenow", pct);
+  const ul = $("opts"); ul.innerHTML = "";
+  shown[idx].forEach((o, i) => {
+    const li = document.createElement("li");
+    const b = document.createElement("button");
+    b.type = "button"; b.className = "opt";
+    b.setAttribute("aria-pressed", picked[idx] === i ? "true" : "false");
+    b.innerHTML = '<span class="k">' + LET[i] + '</span><span></span>';
+    b.lastChild.textContent = o.t;
+    b.addEventListener("click", () => { picked[idx] = i; render(); });
+    li.appendChild(b); ul.appendChild(li);
+  });
+  $("prev").disabled = idx === 0;
+  $("next").disabled = picked[idx] < 0;
+  $("next").textContent = last ? "Завершить" : "Далее";
+}
+
+function finish(){
+  let right = 0;
+  picked.forEach((p, i) => { if (p >= 0 && shown[i][p].ok) right++; });
+  const g = gradeOf(right);
+  $("grade").textContent = g;
+  $("grade").style.color = COLORS[g];
+  $("label").textContent = LABELS[g];
+  $("quiz").classList.add("hide");
+  $("result").classList.remove("hide");
+  $("again").focus();
+}
+
+$("prev").addEventListener("click", () => { if (idx > 0) { idx--; render(); } });
+$("next").addEventListener("click", () => { if (idx < QUESTIONS.length - 1) { idx++; render(); } else finish(); });
+$("again").addEventListener("click", start);
+start();
+</script>
+</body>
+</html>
